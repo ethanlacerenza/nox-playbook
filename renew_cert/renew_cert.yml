@@ -1,0 +1,45 @@
+---
+- name: Update Certificate Dashboard
+  hosts: nox
+  become: yes  # Per eseguire come utente root
+  vars_files:
+    - certs_vars.yml
+
+  tasks:
+    - name: Delete old certs
+      file:
+        path: "/etc/nox-dashboard/certs/{{ item }}"
+        state: absent
+      with_items:
+        - "*"
+
+    - name: Copy certificate file 1
+      get_url:
+        url: "{{ cert1_url }}"
+        dest: /etc/nox-dashboard/certs/
+        mode: '0640'
+        owner: nox-dashboard
+        group: nox-dashboard
+
+    - name: Copy certificate file 2
+      get_url:
+        url: "{{ cert2_url }}"
+        dest: /etc/nox-dashboard/certs/
+        mode: '0640'
+        owner: nox-dashboard
+        group: nox-dashboard
+
+    - name: Restart service Dashboard
+      systemd:
+        name: nox-dashboard
+        state: restarted
+
+    - name: Restart service Manager
+      systemd:
+        name: nox-manager
+        state: restarted
+
+    - name: Restart service Indexer
+      systemd:
+        name: nox-indexer
+        state: restarted

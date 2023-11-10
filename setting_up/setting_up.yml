@@ -1,0 +1,41 @@
+---
+- name: Starting new NOX Server
+  hosts: nox
+  become: yes  # Per eseguire come utente root
+
+  tasks:
+    - name: Delete DB Old Agent
+      file:
+        path: "/var/ossec/db/queue/{{ item }}"
+        state: absent
+      with_items:
+        - "*"
+
+    - name: Random value for authd pass
+      shell: "cat /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 8"
+      register: random_value
+
+    - name: Create file authd.pass with random pwd
+      copy:
+        content: "{{ random_value.stdout }}"
+        dest: /var/ossec/etc/authd.pass
+
+    - name: Restart service Dashboard
+      systemd:
+        name: nox-dashboard
+        state: restarted
+
+    - name: Restart service Manager
+      systemd:
+        name: nox-manager
+        state: restarted
+
+    - name: Restart service Indexer
+      systemd:
+        name: nox-indexer
+        state: restarted
+
+    - name: Restart start Filebeat
+      systemd:
+        name: filebeat
+        state: restarted
